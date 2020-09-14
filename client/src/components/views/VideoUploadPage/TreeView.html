@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+	    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	    <meta name="google" content="notranslate">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta http-equiv="Cache-Control" content="no-cache"/>
+		<meta http-equiv="Expires" content="0"/>
+		<meta http-equiv="Pragma" content="no-cache"/>
+
+	    <link rel="stylesheet" href="../../../jstree/dist/themes/default/style.min.css">
+		<link rel="stylesheet" href="../../../jstree/dist/themes/default-dark/style.min.css">
+		<link rel="stylesheet" href="fakeLoader.css">
+		<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+		<!--<script src="../../../jquery-3.3.1.min.js"></script>-->
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+		<script src="../../../jstree/dist/jstree.min.js"></script>
+
+		<script src="sql.js"></script>
+		<script src="fakeLoader.js"></script>
+
+		<title>PDF Viewer</title>
+		<script type="text/javascript">
+		</script>
+	</head>
+	<body>
+		<div id="fakeLoader"></div>
+		<div id="tree">    		
+		</div>
+		<script type="text/javascript">
+			var db;
+			var Model_Interval;
+			var paramArray = location.href.split("?");
+			var paramValue;
+			if(paramArray.length > 1)
+				paramValue = paramArray[1].split("=")[1];
+			$(document).ready(function(){
+				$("#fakeLoader").fakeLoader({
+				timeToHide: 3000, // 로딩중에 걸리는 시간, 1000은 1초
+				bgColor:"#ffffff", // 배경색
+				spinner:"spinner2" // 로딩중으로 원하는 로딩이미지타입
+				});
+			});
+			
+			var Result_Array = new Array();
+			var db_Array = ['TGB', 'HRS', 'DHB', 'CWP', 'FGC', 'AUB', 'YAD'];
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', 'Database_Tree.db', true);
+			xhr.responseType = 'arraybuffer';
+
+			xhr.onload = function(e) {
+				var uInt8Array = new Uint8Array(this.response);
+				db = new SQL.Database(uInt8Array);			
+				db_Array.forEach(function(item, index, array)
+				{
+					var contents = db.exec("SELECT * FROM " + item);
+					// contents is now [{columns:['col1','col2',...], values:[[first row], [second row], ...]}]
+					contents[0].values.forEach((row) => { 
+						Result_Array = row;
+						
+						// 최상위 트리구조 생성 -------------------------------------------------------
+						var tree_root = document.createElement('ul');
+						tree_root.setAttribute('id', 'tree_class4');
+						document.getElementById('tree').appendChild(tree_root);
+						// ---------------------------------------------------------------------------
+
+						var Parent_Code = Result_Array[0];
+						var tagviewno = Result_Array[1];
+						var tagno = Result_Array[2];
+						var class_ = Result_Array[3];
+
+						if(class_ == "4")
+						{
+							if(item == tagno)
+							{
+								var tree_element = document.createElement('li');
+								tree_element.appendChild(document.createTextNode(tagviewno));
+								tree_element.setAttribute('id', tagno);
+								//if(paramValue != undefined && paramValue == item)
+								//if(Model_Interval != undefined && Model_Interval == item)
+								tree_element.setAttribute('data-jstree','{"checked" : true, "checkbox_disabled" : true}');
+								tree_root.appendChild(tree_element);
+								var ul = document.createElement('ul');
+								ul.setAttribute('id', tagno);
+								ul.setAttribute('name', tagno);
+								ul.setAttribute('value', tagviewno);
+								tree_element.appendChild(ul);
+							}
+							else
+							{
+								var tree_element = document.createElement('li');
+								tree_element.appendChild(document.createTextNode(tagviewno));
+								tree_element.setAttribute('id', tagno);
+								tree_element.setAttribute('data-jstree','{"checkbox_disabled" : true}');
+								//alert("if false tagno = " + tagno + "    parent_code = " + document.getElementsByName(Parent_Code)[0]);
+								document.getElementsByName(Parent_Code)[0].appendChild(tree_element);
+								var ul = document.createElement('ul');
+								ul.setAttribute('id', tagno);
+								ul.setAttribute('name', tagno);
+								ul.setAttribute('value', tagviewno);
+								tree_element.appendChild(ul);
+							}
+						}
+						else if(class_ == "5")
+						{
+							var tree_element = document.createElement('li');
+							tree_element.appendChild(document.createTextNode(tagviewno));
+							tree_element.setAttribute('id', tagno);
+							tree_element.setAttribute('data-jstree','{"checkbox_disabled" : true}');				
+							//alert("if false tagno = " + tagno + "    parent_code = " + document.getElementsByName(Parent_Code)[0]);
+							document.getElementsByName(Parent_Code)[0].appendChild(tree_element);
+							var ul = document.createElement('ul');
+							ul.setAttribute('id', tagno);
+							ul.setAttribute('name', tagno);
+							ul.setAttribute('value', tagviewno);
+							tree_element.appendChild(ul);
+						}
+						else if(class_ == "6" || class_ == "7" ||
+								class_ == "8" || class_ == "13")
+						{
+							var tree_element = document.createElement('li');
+							tree_element.appendChild(document.createTextNode(tagviewno));
+							tree_element.setAttribute('id', tagno);
+							tree_element.setAttribute('data-jstree','{"checkbox_disabled" : true}');
+							//alert("if false tagno = " + tagno + "    parent_code = " + document.getElementsByName(Parent_Code)[0]);
+							document.getElementsByName(Parent_Code)[0].appendChild(tree_element);
+							var ul = document.createElement('ul');
+							ul.setAttribute('id', tagno);
+							ul.setAttribute('name', tagno);
+							ul.setAttribute('value', tagviewno);
+							tree_element.appendChild(ul);
+						}
+					});
+					if(index == db_Array.length -1)
+						Create_tree();
+				});
+			};
+			xhr.send();
+
+			function Create_tree()
+			{
+				$('#tree').jstree({
+					'plugins' : ['sort', 'wholerow', 'checkbox'],
+
+					'core': {
+						"themes":{
+							"icons": true
+						},
+						"dblclick_toggle" : false
+					},
+					'checkbox': {
+						whole_node : false,
+						tie_selection : false
+					},
+					'sort' : function(a, b){
+						a1 = this.get_node(a);
+						b1 = this.get_node(b);
+						if (a1.icon == b1.icon)
+							return (a1.text > b1.text) ? 1 : -1;
+						else
+							return (a1.icon > b1.icon) ? 1 : -1;
+					}
+				});
+				//$('#tree').bind("dblclick.jstree", function (event) { });
+			}
+
+			var ModelConnection_Check = false;
+			var worker;
+			var gameInstance;
+			var pdfInstance;
+			var check_str;
+			var Before_dataNode;
+			var Before_Model_Interval;
+			var pdfArray = new Array();
+			var _3DArray = new Array();
+			var Result_3D_DB_Array = new Array();
+			var Attribute_header = new Array();
+			var Attribute_Value = new Array();
+			var Root_Tree_Background;
+			var Same_PID_ModelClick = false;
+			
+			function getVariable(str){ return eval(str);}
+			
+			
+
+			$('#tree').on("check_node.jstree uncheck_node.jstree", function(e, data) {
+				  //alert(data.node.id + ' ' + data.node.text + (data.node.state.checked ? ' CHECKED': ' NOT CHECKED'));
+				  if(gameInstance != undefined)
+				  {
+				    if(!data.node.state.checked)
+					    gameInstance.SendMessage('Javascript_Manager', 'ReceiveToUnity', "Model_OFF§" + data.node.id);
+					else if (data.node.state.checked)
+						gameInstance.SendMessage('Javascript_Manager', 'ReceiveToUnity', "Model_ON§" + data.node.id);
+				  }
+			})
+
+			$('#tree').on("select_node.jstree", function (e, data){
+				var sysNumber;
+				pdfArray = []; // Array Clear
+				_3DArray = []; // Array Clear
+				Attribute_header = [];
+				Attribute_Value = [];
+
+				//PID Sysnum 구하기
+				var Sysnum = data.node.parents; // Root parents 까지 배열 형식으로 전부 나온다
+				if(Sysnum[Sysnum.length-2] == undefined)
+					Model_Interval = data.node.id;
+				else
+					Model_Interval = Sysnum[Sysnum.length-2];
+				
+				if(Before_Model_Interval != Model_Interval)
+				{
+					Model_Thread = undefined;
+					Before_Model_Interval = Model_Interval;
+				}
+				
+				if(Root_Tree_Background != Model_Interval)
+				{
+					Root_Tree_Background_Func(Root_Tree_Background, Model_Interval);
+					Root_Tree_Background = Model_Interval;
+				}
+				
+
+				for(var j = 0; j < Sysnum.length; j++)
+				{
+					var obj = Sysnum[j].split('-');
+					if(obj.length > 2)
+					{
+						if(obj[obj.length - 1].indexOf('[') != -1 && obj[obj.length - 1].indexOf(']') != -1) // 마지막 문자열에 [, ] 둘다 있는지 판별
+						{
+							if(obj[obj.length - 1] != '[EQUIP]')
+							{
+								sysNumber = obj[obj.length - 1].substr(1,5);
+								break;
+							}
+						}
+					}
+				}
+
+				var TagName = (data.node.id).substr(4);
+				var TreeName = data.node.text;
+				
+				// DB P&ID 검색
+				if(sysNumber != undefined)
+					PID_DB_Search(sysNumber, TagName);
+
+				// 3D Model DB 검색
+				if(TreeName.indexOf('. ') == -1 || TreeName.indexOf('[') == -1 || TreeName.indexOf('소화기') == -1 || TreeName.indexOf('소화전') == -1)
+					_3D_DB_Search(TagName);
+				
+				var Attribute_contents = db.exec("SELECT * FROM TagNo_List where TagNo = '"+ TagName +"'");
+				if(Attribute_contents != "")
+				{
+					Attribute_contents[0].values.forEach((row) => { 
+						var str1 = row[1].trim();
+						var str2 = row[2].trim();
+						Attribute_header.push(str1);
+						Attribute_Value.push(str2);
+					});
+				}
+
+				setTimeout(function(){
+					//if(gameInstance != undefined && ModelConnection_Check && check_str != "click_3DModel")
+					if(check_str != "click_3DModel" && data.node.id.length > 3)
+						Check_Thread_Func(data.node.id);
+						//gameInstance.SendMessage('Javascript_Manager', 'ReceiveToUnity', "Tree_Click§" + data.node.id);
+
+					if(Before_dataNode != data.node.id)
+					{
+						window.open("http://59.11.2.58:58182/develop/pdfjs/web/Sub_TreeView.html?param=" + data.node.id, "SubTreeView");
+						window.open("http://59.11.2.58:58182/develop/pdfjs/web/Attribute_data.html?param=" + data.node.id, "AttributeView");
+						
+						// 3D ModelClick시 PID 탭이 생성되 있을 때 PID_Viewer Reload
+						if(check_str == "click_3DModel")
+						{
+							if(top.frames["TabView"].frames["ContentView"].location != "about:blank")
+							{	
+								if(pdfArray[0] != undefined)
+									top.frames["TabView"].document.getElementById("PIDTab_Text").textContent = "[ " + pdfArray[0].split('.')[0] + " ]";
+								else
+									top.frames["TabView"].document.getElementById("PIDTab_Text").textContent = "[ ]";
+
+								if(top.frames["TabView"].Before_PID_Text == top.frames["TabView"].document.getElementById("PIDTab_Text").textContent)
+								{
+									PId_Not_Reload_Func(TagName);
+									Same_PID_ModelClick = true;
+								}
+								else
+									window.open("http://59.11.2.58:58182/develop/pdfjs/web/PID_viewer.html?param=" + data.node.id + "&pdfno=" + pdfArray[0], "ContentView");
+
+								top.frames["TabView"].Before_PID_Text = top.frames["TabView"].document.getElementById("PIDTab_Text").textContent;
+							}
+						}
+						Before_dataNode = data.node.id;
+					}
+			
+					check_str = undefined;
+				}, 100);
+			});
+
+			function PId_Not_Reload_Func(PID_Tag)
+			{
+				var Annotation_data = top.frames["TabView"].frames["ContentView"].Annotation_Data_Array;
+				var Container_data = top.frames["TabView"].frames["ContentView"].Container_Array;
+				for(var i = 0; i < Annotation_data.length; i++)
+				{
+					if(PID_Tag == Annotation_data[i].contents)
+					{
+						top.frames["TabView"].frames["ContentView"].AnnotationClick_Event(Annotation_data[i], Container_data[i].firstChild, false);
+						top.frames["TabView"].frames["ContentView"].ZoomToFocusing(Container_data[i].firstChild);
+					}
+				}
+			}
+			
+			function Root_Tree_Background_Func(Before, after)
+			{
+				$('#'+ Before + ' > div').css("background","#FFFFFF");
+				$('#'+ after + ' > div').css("background","#9af7bc");
+			}
+
+			var Model_Thread;
+			var Open_node_Check;
+			var before_Thread_id;
+			function Check_Thread_Func(data_id)
+			{
+				if(!Open_node_Check)
+				{
+					if(Model_Thread == undefined)
+					{
+						Model_Thread = setInterval(function(){
+							Select_Model_Func(data_id);
+						}, 100);
+					}
+				}
+				else
+					gameInstance.SendMessage('Javascript_Manager', 'ReceiveToUnity', "Tree_Click§" + data_id);
+			}
+
+			function Select_Model_Func(d_id)
+			{
+				if(top.frames["TabView"].frames["3DView"].UnityState != undefined && top.frames["TabView"].frames["3DView"].UnityState == true)
+				{
+					clearInterval(Model_Thread);
+					gameInstance.SendMessage('Javascript_Manager', 'ReceiveToUnity', "Tree_Click§" + d_id);
+					if(!Open_node_Check)
+					{
+						top.frames["TreeView"].deselect_Tree();
+						top.frames["TreeView"].select_Tree(d_id, true);
+						Open_node_Check = true;
+					}
+				}
+			}
+
+			function _3D_DB_Search(T_Tag)
+			{
+				var contents = db.exec("SELECT * FROM ALL_Model where tagviewno = '"+ T_Tag +"'");
+				if(contents != "")
+				{
+					contents[0].values.forEach((row) => { 
+						var resultStr = row[2].substr(0,3).trim(); // ModelTag [ TGB, HRS, DHB ..... ]
+						var Model_Tag;
+
+						if(resultStr == "TGB" || resultStr == "HRS" || resultStr == "DHB" || 
+							resultStr == "CWP" || resultStr == "FGC" || resultStr == "AUB")
+							Model_Tag = resultStr;
+						else
+							Model_Tag = "YAD";
+
+						switch (resultStr) {
+							case "TGB":
+								resultStr = "터빈건물 [ " + resultStr + " ]";
+								break;
+							case "HRS":
+								resultStr = "배열회수보일러건물 [ " + resultStr + " ]";
+								break;
+							case "DHB":
+								resultStr = "지역난방펌프건물 / 수처리동 / 폐수처리장 / PLB [ " + resultStr + " ]";
+								break;
+							case "CWP":
+								resultStr = "냉각탑 및 냉각수펌프건물 [ " + resultStr + " ]";
+								break;
+							case "FGC":
+								resultStr = "연료가스 압축기실 [ " + resultStr + " ]";
+								break;
+							case "AUB":
+								resultStr = "보조보일러건물 [ " + resultStr + " ]";
+								break;
+							default:
+								resultStr = "YARD [ " + resultStr + " ]";
+								break;
+						}
+						_3DArray.push(resultStr + "§" + Model_Tag);
+						Result_3D_DB_Array.push(row[0] + "§" + row[1] + "§" + row[2]);
+					});
+				}
+			}
+			
+			var PID_Not_DB_check = false;
+			function PID_DB_Search(S_Number, T_Tag)
+			{
+				var contents = db.exec("SELECT * FROM PID_Info where Number = '"+ S_Number +"' and Tag = '"+ T_Tag +"'");
+				if(contents != "" && PID_Not_DB_check == false)
+				{
+					contents[0].values.forEach((row) => { 
+						var resultStr = row[2].trim();
+						resultStr = resultStr.replace(".dwg", ".pdf");
+						pdfArray.push(resultStr);
+					});
+				}
+				else
+				{
+					// System Number가 다를때
+					var devide_sNum = S_Number.substr(3);
+					if(devide_sNum != "00")
+					{
+						devide_sNum = "00";
+						S_Number = S_Number.substr(0,3) + devide_sNum;
+						PID_DB_Search(S_Number, T_Tag);
+					}
+
+					if(pdfArray.length == 0 && PID_Not_DB_check == false)
+						PID_Not_DB_check = true;
+				}
+
+				if(PID_Not_DB_check)
+				{
+					contents = db.exec("SELECT * FROM PID_Info where Tag = '"+ T_Tag +"'");
+					if(contents != "")
+					{
+						contents[0].values.forEach((row) => { 
+							var resultStr = row[2].trim();
+							resultStr = resultStr.replace(".dwg", ".pdf");
+							pdfArray.push(resultStr);
+						});
+
+						PID_Not_DB_check = false;
+					}
+					PID_Not_DB_check = false;
+				}
+			}
+			
+			function CheckBox_disible(Model_Interval)
+			{
+				$('#tree').jstree("check_node", "#" + Model_Interval);
+				$('#tree').jstree("disable_checkbox", "#" + Model_Interval);
+				var child_Arr_Lv1 = $('#tree').jstree("get_children_dom", "#"+ Model_Interval);
+				for(var a = 0; a < child_Arr_Lv1.length; a++)
+				{
+					var nodes_Lv1_id = child_Arr_Lv1[a].id;
+					var leaf_chk_Lv1 = $('#tree').jstree("is_leaf", "#"+ nodes_Lv1_id); // 자식이 있는지 체크. 없으면 True
+					if(leaf_chk_Lv1 == false)
+					{
+						$('#tree').jstree("check_node", "#" + nodes_Lv1_id);
+						$('#tree').jstree("disable_checkbox", "#" + nodes_Lv1_id);
+						var child_Arr_Lv2 = $('#tree').jstree("get_children_dom", "#"+ nodes_Lv1_id);
+						for(var b = 0; b < child_Arr_Lv2.length; b++)
+						{
+							var nodes_Lv2_id = child_Arr_Lv2[b].id;
+							var leaf_chk_Lv2 = $('#tree').jstree("is_leaf", "#"+ nodes_Lv2_id); // 자식이 있는지 체크. 없으면 True
+							if(leaf_chk_Lv2 == false)
+							{
+								$('#tree').jstree("check_node", "#" + nodes_Lv2_id);
+								$('#tree').jstree("disable_checkbox", "#" + nodes_Lv2_id);
+								var child_Arr_Lv3 = $('#tree').jstree("get_children_dom", "#"+ nodes_Lv2_id);
+								for(var c = 0; c < child_Arr_Lv3.length; c++)
+								{
+									var nodes_Lv3_id = child_Arr_Lv3[c].id;
+									var leaf_chk_Lv3 = $('#tree').jstree("is_leaf", "#"+ nodes_Lv3_id); // 자식이 있는지 체크. 없으면 True
+									if(leaf_chk_Lv3 == false)
+									{
+										$('#tree').jstree("check_node", "#" + nodes_Lv3_id);
+										$('#tree').jstree("disable_checkbox", "#" + nodes_Lv3_id);
+										var child_Arr_Lv4 = $('#tree').jstree("get_children_dom", "#"+ nodes_Lv3_id);
+										for(var d = 0; d < child_Arr_Lv4.length; d++)
+										{
+											var nodes_Lv4_id = child_Arr_Lv4[d].id;
+											var leaf_chk_Lv4 = $('#tree').jstree("is_leaf", "#"+ nodes_Lv4_id); // 자식이 있는지 체크. 없으면 True
+											if(leaf_chk_Lv4 == false)
+											{
+												$('#tree').jstree("check_node", "#" + nodes_Lv4_id);
+												$('#tree').jstree("disable_checkbox", "#" + nodes_Lv4_id);
+												var child_Arr_Lv5 = $('#tree').jstree("get_children_dom", "#"+ nodes_Lv4_id);
+												for(var e = 0; e < child_Arr_Lv5.length; e++)
+												{ 
+													var nodes_Lv5_id = child_Arr_Lv5[e].id;
+													var leaf_chk_Lv5 = $('#tree').jstree("is_leaf", "#"+ nodes_Lv5_id); // 자식이 있는지 체크. 없으면 True
+													if(leaf_chk_Lv5 == false)
+													{
+														$('#tree').jstree("check_node", "#" + nodes_Lv5_id);
+														$('#tree').jstree("disable_checkbox", "#" + nodes_Lv5_id);
+														var child_Arr_Lv6 = $('#tree').jstree("get_children_dom", "#"+ nodes_Lv5_id);
+														for(var f = 0; f < child_Arr_Lv6.length; f++)
+														{
+															var nodes_Lv6_id = child_Arr_Lv6[e].id;
+															$('#tree').jstree("check_node", "#" + nodes_Lv6_id);
+															$('#tree').jstree("disable_checkbox", "#" + nodes_Lv6_id);
+														}
+													}
+													else
+													{
+														$('#tree').jstree("check_node", "#" + nodes_Lv5_id);
+														$('#tree').jstree("disable_checkbox", "#" + nodes_Lv5_id);	
+													}
+												}
+											}
+											else
+											{
+												$('#tree').jstree("check_node", "#" + nodes_Lv4_id);
+												$('#tree').jstree("disable_checkbox", "#" + nodes_Lv4_id);
+											}
+										}
+									}
+									else
+									{
+										$('#tree').jstree("check_node", "#" + nodes_Lv3_id);
+										$('#tree').jstree("disable_checkbox", "#" + nodes_Lv3_id);
+									}
+								}
+							}
+							else
+							{
+								$('#tree').jstree("check_node", "#" + nodes_Lv2_id);
+								$('#tree').jstree("disable_checkbox", "#" + nodes_Lv2_id);
+							}
+						}
+					}
+					else
+					{
+						$('#tree').jstree("check_node", "#" + nodes_Lv1_id);
+						$('#tree').jstree("disable_checkbox", "#" + nodes_Lv1_id);
+					}
+				}
+				$('#tree').jstree("close_all", "#" + Model_Interval);
+			}
+
+			function CheckBox_enable(Model_Interval)
+			{
+				$('#tree').jstree("enable_checkbox", "#" + Model_Interval);
+				$("li[id='" + Model_Interval + "_anchor']").css("background","#40fda6");
+				$('#tree').jstree("open_all", "#" + Model_Interval);
+				var child_Arr_Lv1 = $('#tree').jstree("get_children_dom", "#"+ Model_Interval);
+				for(var a = 0; a < child_Arr_Lv1.length; a++)
+				{
+					var nodes_Lv1_id = child_Arr_Lv1[a].id;
+					var leaf_chk_Lv1 = $('#tree').jstree("is_leaf", "#"+ nodes_Lv1_id); // 자식이 있는지 체크. 없으면 True
+					if(leaf_chk_Lv1 == false)
+					{
+						$('#tree').jstree("enable_checkbox", "#" + nodes_Lv1_id);
+						var child_Arr_Lv2 = $('#tree').jstree("get_children_dom", "#"+ nodes_Lv1_id);
+						for(var b = 0; b < child_Arr_Lv2.length; b++)
+						{
+							var nodes_Lv2_id = child_Arr_Lv2[b].id;
+							var leaf_chk_Lv2 = $('#tree').jstree("is_leaf", "#"+ nodes_Lv2_id); // 자식이 있는지 체크. 없으면 True
+							if(leaf_chk_Lv2 == false)
+							{
+								$('#tree').jstree("enable_checkbox", "#" + nodes_Lv2_id);
+								var child_Arr_Lv3 = $('#tree').jstree("get_children_dom", "#"+ nodes_Lv2_id);
+								for(var c = 0; c < child_Arr_Lv3.length; c++)
+								{
+									var nodes_Lv3_id = child_Arr_Lv3[c].id;
+									var leaf_chk_Lv3 = $('#tree').jstree("is_leaf", "#"+ nodes_Lv3_id); // 자식이 있는지 체크. 없으면 True
+									if(leaf_chk_Lv3 == false)
+									{
+										$('#tree').jstree("enable_checkbox", "#" + nodes_Lv3_id);
+										var child_Arr_Lv4 = $('#tree').jstree("get_children_dom", "#"+ nodes_Lv3_id);
+										for(var d = 0; d < child_Arr_Lv4.length; d++)
+										{
+											var nodes_Lv4_id = child_Arr_Lv4[d].id;
+											var leaf_chk_Lv4 = $('#tree').jstree("is_leaf", "#"+ nodes_Lv4_id); // 자식이 있는지 체크. 없으면 True
+											if(leaf_chk_Lv4 == false)
+											{
+												$('#tree').jstree("enable_checkbox", "#" + nodes_Lv4_id);
+												var child_Arr_Lv5 = $('#tree').jstree("get_children_dom", "#"+ nodes_Lv4_id);
+												for(var e = 0; e < child_Arr_Lv5.length; e++)
+												{ 
+													var nodes_Lv5_id = child_Arr_Lv5[e].id;
+													var leaf_chk_Lv5 = $('#tree').jstree("is_leaf", "#"+ nodes_Lv5_id); // 자식이 있는지 체크. 없으면 True
+													if(leaf_chk_Lv5 == false)
+													{
+														$('#tree').jstree("enable_checkbox", "#" + nodes_Lv5_id);
+														var child_Arr_Lv6 = $('#tree').jstree("get_children_dom", "#"+ nodes_Lv5_id);
+														for(var f = 0; f < child_Arr_Lv6.length; f++)
+														{
+															var nodes_Lv6_id = child_Arr_Lv6[f].id;
+															$('#tree').jstree("enable_checkbox", "#" + nodes_Lv6_id);
+														}
+													}
+													else
+														$('#tree').jstree("enable_checkbox", "#" + nodes_Lv5_id);	
+												}
+											}
+											else
+												$('#tree').jstree("enable_checkbox", "#" + nodes_Lv4_id);
+										}
+									}
+									else
+										$('#tree').jstree("enable_checkbox", "#" + nodes_Lv3_id);
+								}
+							}
+							else
+								$('#tree').jstree("enable_checkbox", "#" + nodes_Lv2_id);
+						}
+					}
+					else
+						$('#tree').jstree("enable_checkbox", "#" + nodes_Lv1_id);
+				}
+				$('#tree').jstree("close_all", "#" + Model_Interval);
+			}
+
+			function ModelCheck_Func(Model_Interval)
+			{ 
+				var checkbox_length = $("[id^='"+Model_Interval+"']").length;
+				var check_Array = new Array(checkbox_length);
+				for(var n = 0; n < checkbox_length; n++)
+				{
+					check_Array[n] = $("[id^='"+Model_Interval+"']")[n].id;
+					$('#tree').jstree("check_node", "#"+check_Array[n]);
+				}
+			}		
+
+			function deselect_Tree()
+			{ $('#tree').jstree("deselect_all"); }
+			
+			function select_Tree(param, bool)
+			{
+				if(bool == true)
+					check_str = "click_3DModel";
+				else
+					check_str = "click_Annotaion";
+				
+				$('#tree').jstree("select_node", "#" + param);
+				var tree_focus = document.getElementById(param);
+				
+				if(tree_focus != null)
+					tree_focus.scrollIntoView({behavior: "instant", block: "center", inline: "center"});
+				else
+				{
+					if(check_str == "click_Annotaion")
+					{
+						// 클릭한 P&ID Tag가 다른건물에 있을 때 팝업창 띄우기
+						_3DArray = [];
+						Result_3D_DB_Array = [];
+						_3D_DB_Search(param.substr(4));
+						if(_3DArray.length > 0)
+						{
+							top.frames["TabView"].PID_dialog_confirm_Func(_3DArray, Result_3D_DB_Array);
+							top.frames["TabView"].dialog_Background_Func();
+						}
+					}
+				}
+			}
+
+		</script>
+	</body>
+</html>
