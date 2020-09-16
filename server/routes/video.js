@@ -56,8 +56,18 @@ router.get('/getVideos', (req, res) => {
         .populate('writer')
         .exec((err, videos) => {
             if(err) return res.status(400).send(err);
-            res.status(200).json({ success: true, videos })
+            return res.status(200).json({ success: true, videos })
         });       //비디오 컬렉션 안의 모든 비디오를 가져온다.
+})
+
+router.post('/getVideoDetail', (req, res) => {
+    Video.findOne({ "_id" : req.body.videoId })
+        .populate('writer')
+        .exec((err, videoDetail) => {
+            if(err) return res.status(400).send(err);
+            
+            return res.status(200).json({ success: true, videoDetail })
+        })
 })
 
 router.post('/thumbnail', (req, res) => {
