@@ -2,11 +2,12 @@ import React, { useState } from 'react'
 import { Input, Button } from 'antd'
 import Axios from 'axios';
 import { useSelector } from 'react-redux'
+import SingleComment from './SingleComment'
+import ReplyComment from './ReplyComment'
 
 const { TextArea } = Input;
 
 function Comment(props) {
-    const videoId = props.match.params.videoId;
     const user = useSelector(state => state.user);
     const [commentValue, setcommentValue] = useState("")
     
@@ -21,12 +22,13 @@ function Comment(props) {
         const variables = {
             content: commentValue,
             writer: user.userData._id,
-            postId: videoId
+            postId: props.postId
         }
         Axios.post('/api/comment/saveComment', variables)
         .then(response => {
             if(response.data.success) {
-                console.log(response.data.success);
+                setcommentValue("")
+                props.refreshFunction(response.data.result)
             }else {
                 alert('코멘트를 저장하지 못했습니다.')
             }
@@ -36,19 +38,18 @@ function Comment(props) {
     return (
         <div>
             <br />
-            <p> replies</p>
+            <p>댓글</p>
             <hr />
             {/* Comment Lists  */}
-            {/* {console.log(props.CommentLists)}
-
-            {props.CommentLists && props.CommentLists.map((comment, index) => (
-                (!comment.responseTo &&
+            {props.commentLists && props.commentLists.map((comment, index) => (
+                (!comment.responseTo && 
                     <React.Fragment>
-                        <SingleComment comment={comment} postId={props.postId} refreshFunction={props.refreshFunction} />
-                        <ReplyComment CommentLists={props.CommentLists} postId={props.postId} parentCommentId={comment._id} refreshFunction={props.refreshFunction} />
+                        <SingleComment refreshFunction={props.refreshFunction} comment={comment} postId={props.postId} />
+                        <ReplyComment refreshFunction={props.refreshFunction} parentCommentId={comment._id} postId={props.postId} commentLists={props.commentLists} />
                     </React.Fragment>
                 )
-            ))} */}
+            ))}
+            
 
 
             {/* Root Comment Form */}
