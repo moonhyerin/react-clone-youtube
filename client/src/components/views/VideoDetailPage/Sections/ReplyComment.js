@@ -38,7 +38,6 @@ function ReplyComment(props) {
 
     return (
         <div>
-
             {ChildCommentNumber > 0 &&
                 <p style={{ fontSize: '14px', margin: 0, color: 'gray' }} onClick={onHandleChange}>
                     View {ChildCommentNumber} more comment(s)
@@ -48,7 +47,6 @@ function ReplyComment(props) {
             {OpenReplyComments && 
                 renderReplyComment(props.parentCommentId)
             }
-
         </div>
     )
 }
