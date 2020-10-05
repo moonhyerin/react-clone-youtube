@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
-const Schema = require('mongoose')
+const Schema = mongoose.Schema;
 
 const videoSchema = mongoose.Schema({
     writer: {
-        type: mongoose.Schema.Types.ObjectId,   //이 타입으로 넣으면 User.js model의 모든 정보를 읽어올 수 있다.
+        type: Schema.Types.ObjectId,   //이 타입으로 넣으면 User.js model의 모든 정보를 읽어올 수 있다.
         ref: 'User'
     },
     title: {
