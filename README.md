@@ -1,3 +1,6 @@
+* inflearn 유튜브 클론 강의를 기반으로 한 프로젝트입니다!
+* Node.js / React
+
 Hello, My Friends  
 Thank you for having interest in this repository ! 
 
